@@ -6,8 +6,7 @@
 
 
 <p align="center"><img src="./img/문제 정의.png"  width="500" height="270"></p>
-|:--:| 
-| *Space* |
+<p align="center">음성인지 문제 정의<p align="center">
 
 **추가적으로, 본 개발자들은 ETRI에서 작성된 사용협약서에 준수하여 pretrained 모델 및 정보에 관한 내용은 공개하지 않는다.** 해당 프로젝트에서 활용한 ETRI 형태소 분석기, 토큰화를 사용하시려면 다음 [링크](https://aiopen.etri.re.kr/key_main.php)에서 서약서를 작성 후 키와 코드를 다운받은 후, 제공된 분류 모델들을 적용하여 분석한다.
 
