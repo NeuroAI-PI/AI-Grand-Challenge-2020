@@ -37,7 +37,7 @@ requests
 
 
 
-| Model || MLP || CNN || LSTM |
-| ----- || ----- || ----- || ----- |
-| Macro F1-Score || 0.15 || 0.15 || 0.15 |
-
+| Model || Macro F1-Score |
+| ----- || ----- |
+| MLP || 0.15 |
+| CNN || 0.15 |
