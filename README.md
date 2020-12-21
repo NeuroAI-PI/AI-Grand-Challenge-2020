@@ -35,10 +35,10 @@ requests
 
 결과는 Macro-F1 score에 의해 평가되었으며 아래와 같이 정의한다.
 
-아래의 표는 2020 
+아래의 표는 2020 인공지능 그랜드 챌린지 
 
 | Model | MLP [1] | CNN [2] | LSTM [3] | Bi-LSTM [4] |
 | :-----: | :-----: | :-----: | :-----: | :-----: |
-| Macro F1-Score | 0.7029 | 0.615 |<span style="color:red">0.7157</span>| 0.6935 |
+| Macro F1-Score | 0.7029 | 0.615 | <font color='red'>0.7157</font> | 0.6935 |
 
 
