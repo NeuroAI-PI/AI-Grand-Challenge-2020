@@ -24,5 +24,13 @@ Python 3.7
 
 Pytorch == 1.5.0
 
+boto3
+
+botocore
+
+tqdm
+
+requests
+
 
 
