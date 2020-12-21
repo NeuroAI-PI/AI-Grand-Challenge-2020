@@ -37,7 +37,7 @@ requests
 
 
 
-
-
+|Model||-----|
+|Macro F1-Score||-----|
 
 
