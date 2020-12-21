@@ -39,6 +39,6 @@ requests
 
 | Model | MLP [1] | CNN [2] | LSTM [3] | Bi-LSTM [4] |
 | :-----: | :-----: | :-----: | :-----: | :-----: |
-| Macro F1-Score | 0.7029 | 0.615 | <span style="color:red">0.7157</span> | 0.6935 |
+| Macro F1-Score | 0.7029 | 0.615 |<span style="color:red">0.7157</span>| 0.6935 |
 
 
