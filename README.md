@@ -34,7 +34,7 @@ requests
 
 ### 1. MLP
 
-<p align="center"><img src="./img/MLP.png"  width="700" height="270"></p>
+<p align="center"><img src="./img/MLP.png"  width="400" height="270"></p>
 <p align="center"><b>< 활용된 CNN 모델 ></b><p align="center">
 
 ### 2. CNN
