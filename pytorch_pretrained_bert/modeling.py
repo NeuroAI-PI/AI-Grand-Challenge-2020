@@ -640,67 +640,10 @@ class BertModel(PreTrainedBertModel):
         return encoded_layers, pooled_output
 
 
-class BertForSequenceClassificationMLP1(PreTrainedBertModel):
-    def __init__(self, config, num_labels=2):
-        super(BertForSequenceClassificationMLP1, self).__init__(config)
-        # not reshape
-        # self.classifier = nn.Linear(config.hidden_size, num_labels)
-
-        # # reshape
-        # self.max_length = 128
-        # self.classifier = nn.Linear(config.hidden_size*self.max_length, num_labels)
-
-        # select_cls_layers_reshape
-        self.select_layers_len = 4
-        self.classifier = nn.Linear(config.hidden_size*self.select_layers_len, num_labels)
-
-        self.num_labels = num_labels
-        self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.apply(self.init_bert_weights)
-        self.leakyrelu = nn.LeakyReLU(0.01)
-        self.relu = nn.ReLU()
-        self.softmax = nn.Softmax(dim=1)
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
-        # not reshape
-        # _, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
-        # model_input = pooled_output
-
-        # # reshape
-        # output_all_encoded_layers, pooled_output = self.bert(input_ids, token_type_ids, attention_mask,
-        #                                                      output_all_encoded_layers=False)
-        # model_input = torch.reshape(output_all_encoded_layers, (len(output_all_encoded_layers), -1))
-
-        # # select_cls_layers_reshape
-        output_all_encoded_layers, pooled_output = self.bert(input_ids, token_type_ids, attention_mask,
-                                                             output_all_encoded_layers=all)
-        output_select_encoded_layers = output_all_encoded_layers[len(output_all_encoded_layers) - self.select_layers_len:]
-        for i in range(self.select_layers_len):
-            output_cls_layers = output_select_encoded_layers[i][:, 0, :]
-            if i == 0:
-                output_cls_reshape = output_cls_layers
-            else:
-                output_cls_reshape = torch.cat((output_cls_reshape, output_cls_layers), 1)
-
-        model_input = output_cls_reshape
-
-        model_input = self.leakyrelu(model_input)
-        model_input = self.dropout(model_input)
-        logits = self.classifier(model_input)
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            return loss
-        else:
-            logits = self.softmax(logits)
-            return logits
-
-
-class BertForSequenceClassificationMLP2(PreTrainedBertModel):
+class BertForSequenceClassificationMLP(PreTrainedBertModel):
 
     def __init__(self, config, num_labels=2):
-        super(BertForSequenceClassificationMLP2, self).__init__(config)
+        super(BertForSequenceClassificationMLP, self).__init__(config)
 
         # # reshape
         # self.max_length = 128
@@ -731,107 +674,10 @@ class BertForSequenceClassificationMLP2(PreTrainedBertModel):
         # # not reshape
         model_input = pooled_output
 
-        # # select_cls_layers_reshape
-        # output_all_encoded_layers, pooled_output = self.bert(input_ids, token_type_ids, attention_mask,
-        #                                                      output_all_encoded_layers=all)
-        # output_select_encoded_layers = output_all_encoded_layers[
-        #                                len(output_all_encoded_layers) - self.select_layers_len:]
-        # for i in range(self.select_layers_len):
-        #     output_cls_layers = output_select_encoded_layers[i][:, 0, :]
-        #     if i == 0:
-        #         output_cls_reshape = output_cls_layers
-        #     else:
-        #         output_cls_reshape = torch.cat((output_cls_reshape, output_cls_layers), 1)
-        #
-        # model_input = output_cls_reshape
-
         x = self.fc1(model_input)
         x = self.leakyrelu(x)
         x = self.dropout(x)
         logits = self.fc2(x)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            return loss
-        else:
-            logits = self.softmax(logits)
-            return logits
-
-
-class BertForSequenceClassificationMLP3(PreTrainedBertModel):
-
-    def __init__(self, config, num_labels=None):
-        super(BertForSequenceClassificationMLP3, self).__init__(config)
-
-        self.select_layers_len = 4
-        self.mlp_0 = nn.Linear(config.hidden_size, int(config.hidden_size / 2))
-        self.mlp_1 = nn.Linear(config.hidden_size, int(config.hidden_size / 2))
-        self.mlp_2 = nn.Linear(config.hidden_size, int(config.hidden_size / 2))
-        self.mlp_3 = nn.Linear(config.hidden_size, int(config.hidden_size / 2))
-        self.mlp_4 = nn.Linear(int(config.hidden_size / 2), int(config.hidden_size / 4))
-        self.mlp_5 = nn.Linear(int(config.hidden_size / 2), int(config.hidden_size / 4))
-        self.mlp_6 = nn.Linear(int(config.hidden_size / 2), int(config.hidden_size / 4))
-        self.mlp_7 = nn.Linear(int(config.hidden_size / 2), int(config.hidden_size / 4))
-
-        # cat version
-        # self.classifier_1 = nn.Linear(config.hidden_size, int(config.hidden_size / 2))
-        # self.classifier_2 = nn.Linear(int(config.hidden_size / 2), int(config.hidden_size / 4))
-        # self.classifier_3 = nn.Linear(int(config.hidden_size / 4), num_labels)
-
-        # # add version
-        self.classifier = nn.Linear(int(config.hidden_size / 4), num_labels)
-
-        self.num_labels = num_labels
-        self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.apply(self.init_bert_weights)
-        self.leakyrelu = nn.LeakyReLU(0.01)
-        self.relu = nn.ReLU()
-        self.logsigmoid = nn.LogSigmoid()
-        self.softmax = nn.Softmax(dim=1)
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
-        output_all_encoded_layers, pooled_output = self.bert(input_ids, token_type_ids, attention_mask,
-                                                             output_all_encoded_layers=all)
-        output_select_encoded_layers = output_all_encoded_layers[len(output_all_encoded_layers) - self.select_layers_len:]
-
-        # layer 1
-        x0 = self.mlp_0(output_select_encoded_layers[0][:, 0, :])
-        x0 = self.leakyrelu(x0)
-        x0 = self.dropout(x0)
-        x1 = self.mlp_1(output_select_encoded_layers[1][:, 0, :])
-        x1 = self.leakyrelu(x1)
-        x1 = self.dropout(x1)
-        x2 = self.mlp_2(output_select_encoded_layers[2][:, 0, :])
-        x2 = self.leakyrelu(x2)
-        x2 = self.dropout(x2)
-        x3 = self.mlp_3(output_select_encoded_layers[3][:, 0, :])
-        x3 = self.leakyrelu(x3)
-        x3 = self.dropout(x3)
-
-        # layer 2
-        x0 = self.mlp_4(x0)
-        x0 = self.leakyrelu(x0)
-        x1 = self.mlp_5(x1)
-        x1 = self.leakyrelu(x1)
-        x2 = self.mlp_6(x2)
-        x2 = self.leakyrelu(x2)
-        x3 = self.mlp_7(x3)
-        x3 = self.leakyrelu(x3)
-
-        # layer 3 / cat version
-        # x4 = torch.cat((x0, x1, x2, x3), 1)
-        #
-        # x4 = self.classifier_1(x4)
-        # x4 = self.classifier_2(x4)
-        # logits = self.classifier_3(x4)
-
-        # # layer 3 / add version
-        x4 = torch.add(torch.add(x0, x1), torch.add(x2, x3))
-
-        logits = self.classifier(x4)
-
 
         if labels is not None:
             loss_fct = CrossEntropyLoss()
@@ -883,31 +729,6 @@ class BertForSequenceClassificationCNN(PreTrainedBertModel):
         x = self.dropout(x)  # (N, len(Ks)*Co)
         logits = self.fc1(x)  # (N, C)
 
-        # # version 2
-        # output_all_encoded_layers, pooled_output = self.bert(input_ids, token_type_ids, attention_mask,
-        #                                                      output_all_encoded_layers=all)
-        #
-        # output_select_encoded_layers = output_all_encoded_layers[
-        #                                len(output_all_encoded_layers) - self.select_layers_len:]
-        #
-        # for i in range(self.select_layers_len):
-        #     if i == 0:
-        #         output_cls_layers = self.pooler(output_select_encoded_layers[i]).unsqueeze(1)
-        #     else:
-        #         output_cls_layers = torch.cat((output_cls_layers,  self.pooler(output_select_encoded_layers[i]).unsqueeze(1)), 1)
-        #
-        # if self.static:
-        #     output_cls_layers = Variable(output_cls_layers)
-        #
-        # output_cls_layers = output_cls_layers.unsqueeze(1)  # (N, Ci, W, D)
-        #
-        # x = [F.relu(conv(output_cls_layers)).squeeze(3) for conv in self.convs1]
-        # x = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in x]  # [(N, Co), ...]*len(Ks)
-        # x = torch.cat(x, 1)
-        # x = self.dropout(x)  # (N, len(Ks)*Co)
-        # logits = self.fc1(x)  # (N, C)
-
-
         if labels is not None:
             loss_fct = CrossEntropyLoss()
             loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
@@ -920,69 +741,6 @@ class BertForSequenceClassificationCNN(PreTrainedBertModel):
 class BertForSequenceClassificationLSTM(PreTrainedBertModel):
     def __init__(self, config, num_labels=None):
         super(BertForSequenceClassificationLSTM, self).__init__(config)
-        self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.num_labels = num_labels
-        self.rnn_hidden = 768
-        self.num_layers = 2
-        self.pad_size = 62
-        self.select_layers_len = 4
-
-        self.sigmoid = nn.Sigmoid()
-        self.relu = nn.ReLU()
-        self.tanh = nn.Tanh()
-        self.leakyrelu = nn.LeakyReLU(0.01)
-
-        for param in self.bert.parameters():
-            param.requires_grad = True
-        self.lstm = nn.LSTM(config.hidden_size, self.rnn_hidden, self.num_layers,
-                            bidirectional=True, batch_first=True, dropout=config.hidden_dropout_prob)
-        self.maxpool = nn.MaxPool1d(self.pad_size)
-        self.fc = nn.Linear(self.rnn_hidden * 2 + config.hidden_size, self.num_labels)
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
-
-        # # version 1
-        output_all_encoded_layers, pooled_output = self.bert(input_ids, token_type_ids, attention_mask,
-                                                             output_all_encoded_layers=False)
-        out, _ = self.lstm(output_all_encoded_layers)
-        out = torch.cat((output_all_encoded_layers, out), 2)
-        out = self.relu(out)
-
-        out = out.permute(0, 2, 1)
-        out = self.maxpool(out).squeeze()
-        out = self.tanh(out)
-        logits = self.fc(out)
-
-        # # version 2 - 4 layer add
-        # output_all_encoded_layers, pooled_output = self.bert(input_ids, token_type_ids, attention_mask,
-        #                                                      output_all_encoded_layers=all)
-        #
-        # output_select_encoded_layers = output_all_encoded_layers[
-        #                                len(output_all_encoded_layers) - self.select_layers_len:]
-        #
-        # x0 = torch.add(torch.add(output_select_encoded_layers[0], output_select_encoded_layers[1]),
-        #                torch.add(output_select_encoded_layers[2], output_select_encoded_layers[3]))
-        #
-        # out, _ = self.lstm(x0)
-        # out = torch.cat((x0, out), 2)
-        # out = self.relu(out)
-        #
-        # out = out.permute(0, 2, 1)
-        # out = self.maxpool(out).squeeze()
-        # out = self.tanh(out)
-        # logits = self.fc(out)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            return loss
-        else:
-            return logits
-
-class BertForSequenceClassificationLSTM2(PreTrainedBertModel):
-    def __init__(self, config, num_labels=None):
-        super(BertForSequenceClassificationLSTM2, self).__init__(config)
         self.bert = BertModel(config)
 
         self.num_labels = num_labels
@@ -998,32 +756,24 @@ class BertForSequenceClassificationLSTM2(PreTrainedBertModel):
         self.dropout_1 = nn.Dropout(config.hidden_dropout_prob)
         self.lstm_1 = nn.LSTM(config.hidden_size, config.hidden_size // 4, num_layers=self.num_layers,
                               bidirectional=False, batch_first=True, dropout=config.hidden_dropout_prob)
-        # self.relu_1 = nn.ReLU()
 
         self.dropout_2 = nn.Dropout(config.hidden_dropout_prob)
         self.lstm_2 = nn.LSTM(config.hidden_size, config.hidden_size // 4, num_layers=self.num_layers,
                               bidirectional=False, batch_first=True, dropout=config.hidden_dropout_prob)
-        # self.relu_2 = nn.ReLU()
 
         self.dropout_3 = nn.Dropout(config.hidden_dropout_prob)
         self.lstm_3 = nn.LSTM(config.hidden_size, config.hidden_size // 4, num_layers=self.num_layers,
                               bidirectional=False, batch_first=True, dropout=config.hidden_dropout_prob)
-        # self.relu_3 = nn.ReLU()
 
         self.dropout_4 = nn.Dropout(config.hidden_dropout_prob)
         self.lstm_4 = nn.LSTM(config.hidden_size, config.hidden_size // 4, num_layers=self.num_layers,
                               bidirectional=False, batch_first=True, dropout=config.hidden_dropout_prob)
-        # self.relu_4 = nn.ReLU()
-
-        # self.fc1 = nn.Linear(config.hidden_size, config.hidden_size // 16)
-        # self.fc2 = nn.Linear(config.hidden_size // 16, self.num_labels)
 
         self.fc1 = nn.Linear(self.input_size * 768, self.input_size * 768 // 512)
         self.fc2 = nn.Linear(self.input_size * 768 // 512, self.num_labels)
 
         self.tanh = nn.Tanh()
         self.leakyrelu = nn.LeakyReLU(0.01)
-
 
     def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
 
@@ -1059,10 +809,6 @@ class BertForSequenceClassificationLSTM2(PreTrainedBertModel):
         out = self.fc1(out)
         logits = self.fc2(out)
 
-
-        # print('permute output : ', out.shape)
-        # print('fc output : ', logits.shape)
-
         if labels is not None:
             loss_fct = CrossEntropyLoss()
             loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
@@ -1070,218 +816,5 @@ class BertForSequenceClassificationLSTM2(PreTrainedBertModel):
         else:
             return logits
 
-
-class BertForSequenceClassificationLSTM3(PreTrainedBertModel):
-    def __init__(self, config, num_labels=None):
-        super(BertForSequenceClassificationLSTM3, self).__init__(config)
-        self.bert = BertModel(config)
-
-        self.num_labels = num_labels
-        self.input_size = 256
-        self.rnn_hidden = 768
-        self.num_layers = 2
-        self.pad_size = 128
-        self.select_layers_len = 4
-        self.using_pack_sequence = True
-        self.seq_length = 256
-
-        for param in self.bert.parameters():
-            param.requires_grad = True
-
-        self.dropout_1 = nn.Dropout(config.hidden_dropout_prob)
-        self.lstm_1 = nn.LSTM(config.hidden_size, config.hidden_size // 4, num_layers=self.num_layers,
-                              bidirectional=False, batch_first=True, dropout=config.hidden_dropout_prob)
-        # self.relu_1 = nn.ReLU()
-
-        self.dropout_2 = nn.Dropout(config.hidden_dropout_prob)
-        self.lstm_2 = nn.LSTM(config.hidden_size, config.hidden_size // 4, num_layers=self.num_layers,
-                              bidirectional=False, batch_first=True, dropout=config.hidden_dropout_prob)
-        # self.relu_2 = nn.ReLU()
-
-        self.dropout_3 = nn.Dropout(config.hidden_dropout_prob)
-        self.lstm_3 = nn.LSTM(config.hidden_size, config.hidden_size // 4, num_layers=self.num_layers,
-                              bidirectional=False, batch_first=True, dropout=config.hidden_dropout_prob)
-        # self.relu_3 = nn.ReLU()
-
-        self.dropout_4 = nn.Dropout(config.hidden_dropout_prob)
-        self.lstm_4 = nn.LSTM(config.hidden_size, config.hidden_size // 4, num_layers=self.num_layers,
-                              bidirectional=False, batch_first=True, dropout=config.hidden_dropout_prob)
-        # self.relu_4 = nn.ReLU()
-
-        # self.fc1 = nn.Linear(config.hidden_size, config.hidden_size // 16)
-        # self.fc2 = nn.Linear(config.hidden_size // 16, self.num_labels)
-
-        self.fc1 = nn.Linear(62 * 768, 62 * 768 // 16)
-        self.fc2 = nn.Linear(62 * 768 // 16, self.num_labels)
-
-        self.tanh = nn.Tanh()
-        self.leakyrelu = nn.LeakyReLU(0.01)
-
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
-
-        # # version 1
-        outputs, _ = self.bert(input_ids, token_type_ids, attention_mask=attention_mask,
-                               output_all_encoded_layers=True)
-
-        out = outputs[-1]
-        out = self.dropout_1(out)
-        out, _ = self.lstm_1(out)
-
-        out2 = torch.flip(outputs[-2], [1])
-        out2 = self.dropout_2(out2)
-        out2, _ = self.lstm_2(out2)
-
-        out = torch.cat((out, out2), 2)
-
-        out2 = outputs[-3]
-        out2 = self.dropout_3(out2)
-        out2, _ = self.lstm_3(out2)
-        out = torch.cat((out, out2), 2)
-
-        out2 = torch.flip(outputs[-4], [1])
-        out2 = self.dropout_4(out2)
-        out2, _ = self.lstm_4(out2)
-        out = torch.cat((out, out2), 2)
-
-        del out2, outputs
-
-        out = out.reshape([out.shape[0], -1])
-
-        out = self.fc1(out)
-        logits = self.fc2(out)
-
-
-        # print('permute output : ', out.shape)
-        # print('fc output : ', logits.shape)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            return loss
-        else:
-            return logits
-
-
-class BertForSequenceClassificationLSTM_HK(PreTrainedBertModel):
-    def __init__(self, config, num_labels=None):
-        super(BertForSequenceClassificationLSTM_HK, self).__init__(config)
-        self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.num_labels = num_labels
-        self.rnn_hidden = 768
-        self.bi_rnn_hidden = 1536
-        self.num_layers = 2
-        self.pad_size = 128
-        self.select_layers_len = 4
-
-        self.sigmoid = nn.Sigmoid()
-        self.relu = nn.ReLU()
-        self.tanh = nn.Tanh()
-        self.leakyrelu = nn.LeakyReLU(0.01)
-
-        for param in self.bert.parameters():
-            param.requires_grad = True
-        self.bi_lstm = nn.LSTM(config.hidden_size, self.rnn_hidden, self.num_layers,
-                            bidirectional=True, batch_first=True, dropout=config.hidden_dropout_prob)
-        self.lstm = nn.LSTM(self.bi_rnn_hidden, self.bi_rnn_hidden, self.num_layers,
-                               bidirectional=False, batch_first=True, dropout=config.hidden_dropout_prob)
-        self.maxpool = nn.MaxPool1d(self.pad_size)
-        self.fc = nn.Linear(self.rnn_hidden * 2, self.num_labels)
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
-
-        # # version 1
-        output_all_encoded_layers, pooled_output = self.bert(input_ids, token_type_ids, attention_mask,
-                                                             output_all_encoded_layers=False)
-        out, _ = self.bi_lstm(output_all_encoded_layers)
-        out_add, _ = self.lstm(out)
-        out = torch.cat((out, out_add), 2)
-        out = self.relu(out)
-
-        out = out.permute(0, 2, 1)
-        out = self.maxpool(out)
-        out = self.tanh(out)
-        logits = self.fc(out)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            return loss
-        else:
-            return logits
-
-
-class BertForTokenClassification(PreTrainedBertModel):
-    """BERT model for token-level classification.
-    This module is composed of the BERT model with a linear layer on top of
-    the full hidden state of the last layer.
-
-    Params:
-        `config`: a BertConfig class instance with the configuration to build a new model.
-        `num_labels`: the number of classes for the classifier. Default = 2.
-
-    Inputs:
-        `input_ids`: a torch.LongTensor of shape [batch_size, sequence_length]
-            with the word token indices in the vocabulary(see the tokens preprocessing logic in the scripts
-            `extract_features.py`, `run_classifier.py` and `run_squad.py`)
-        `token_type_ids`: an optional torch.LongTensor of shape [batch_size, sequence_length] with the token
-            types indices selected in [0, 1]. Type 0 corresponds to a `sentence A` and type 1 corresponds to
-            a `sentence B` token (see BERT paper for more details).
-        `attention_mask`: an optional torch.LongTensor of shape [batch_size, sequence_length] with indices
-            selected in [0, 1]. It's a mask to be used if the input sequence length is smaller than the max
-            input sequence length in the current batch. It's the mask that we typically use for attention when
-            a batch has varying length sentences.
-        `labels`: labels for the classification output: torch.LongTensor of shape [batch_size, sequence_length]
-            with indices selected in [0, ..., num_labels].
-
-    Outputs:
-        if `labels` is not `None`:
-            Outputs the CrossEntropy classification loss of the output with the labels.
-        if `labels` is `None`:
-            Outputs the classification logits of shape [batch_size, sequence_length, num_labels].
-
-    Example usage:
-    ```python
-    # Already been converted into WordPiece token ids
-    input_ids = torch.LongTensor([[31, 51, 99], [15, 5, 0]])
-    input_mask = torch.LongTensor([[1, 1, 1], [1, 1, 0]])
-    token_type_ids = torch.LongTensor([[0, 0, 1], [0, 1, 0]])
-
-    config = BertConfig(vocab_size_or_config_json_file=32000, hidden_size=768,
-        num_hidden_layers=12, num_attention_heads=12, intermediate_size=3072)
-
-    num_labels = 2
-
-    model = BertForTokenClassification(config, num_labels)
-    logits = model(input_ids, token_type_ids, input_mask)
-    ```
-    """
-    def __init__(self, config, num_labels=2):
-        super(BertForTokenClassification, self).__init__(config)
-        self.num_labels = num_labels
-        self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.classifier = nn.Linear(config.hidden_size, num_labels)
-        self.apply(self.init_bert_weights)
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
-        sequence_output, _ = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
-        sequence_output = self.dropout(sequence_output)
-        logits = self.classifier(sequence_output)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            # Only keep active parts of the loss
-            if attention_mask is not None:
-                active_loss = attention_mask.view(-1) == 1
-                active_logits = logits.view(-1, self.num_labels)[active_loss]
-                active_labels = labels.view(-1)[active_loss]
-                loss = loss_fct(active_logits, active_labels)
-            else:
-                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            return loss
-        else:
-            return logits
 
 

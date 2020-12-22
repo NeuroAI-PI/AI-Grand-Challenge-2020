@@ -40,8 +40,7 @@ from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
 
 from pytorch_pretrained_bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
-from pytorch_pretrained_bert.modeling import BertForSequenceClassificationMLP1, \
-    BertForSequenceClassificationMLP2, BertForSequenceClassificationMLP3,\
+from pytorch_pretrained_bert.modeling import BertForSequenceClassificationMLP, \
     BertForSequenceClassificationCNN, BertForSequenceClassificationLSTM, BertConfig, \
     WEIGHTS_NAME, CONFIG_NAME
 ### kyoungman.bae @ 19-05-28
@@ -515,12 +514,8 @@ def main():
 
     classification_name = args.classification_name
 
-    if classification_name == "mlp1":
-        BertForSequenceClassification = BertForSequenceClassificationMLP1
-    elif classification_name == "mlp2":
-        BertForSequenceClassification = BertForSequenceClassificationMLP2
-    elif classification_name == "mlp3":
-        BertForSequenceClassification = BertForSequenceClassificationMLP3
+    if classification_name == "mlp":
+        BertForSequenceClassification = BertForSequenceClassificationMLP
     elif classification_name == "cnn":
         BertForSequenceClassification = BertForSequenceClassificationCNN
     elif classification_name == "lstm":
