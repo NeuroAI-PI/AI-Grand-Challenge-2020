@@ -41,12 +41,12 @@ requests
 
 ### 3. LSTM
 
-<p align="center"><img src="./img/LSTM.png"  width="500" height="270"></p>
+<p align="center"><img src="./img/LSTM.png"  width="700" height="270"></p>
 <p align="center"><b>< 활용된 LSTM 모델 ></b><p align="center">
 
 ### 4. Bi-LSTM 
 
-<p align="center"><img src="./img/Bi-LSTM.png"  width="500" height="270"></p>
+<p align="center"><img src="./img/Bi-LSTM.png"  width=700" height="270"></p>
 <p align="center"><b>< 활용된 Bi-LSTM 모델 ></b><p align="center">
 
 
