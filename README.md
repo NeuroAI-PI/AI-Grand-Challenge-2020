@@ -61,7 +61,7 @@ requests
 
 결과는 Macro-F1 score에 의해 평가되었으며 아래와 같이 정의한다.
 
-<p align="center"><img src="./img/formula.png"  width=250" height="80"></p>
+<p align="center"><img src="./img/formula.png"  width=280" height="100"></p>
 <p align="center"><b>< Macro-F1 Score ></b><p align="center">
 
 아래의 결과는 2020 인공지능 그랜드 챌린지 4차 대회 음성인지 트랙에서 본 팀에 대한 결과이며, 주최 측에서 테스트 데이터는 공개하지 않아 확인할 수 없습니다.
