@@ -41,8 +41,8 @@ from tqdm import tqdm, trange
 
 from pytorch_pretrained_bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
 from pytorch_pretrained_bert.modeling import BertForSequenceClassificationMLP, \
-    BertForSequenceClassificationCNN, BertForSequenceClassificationLSTM, BertConfig, \
-    WEIGHTS_NAME, CONFIG_NAME
+    BertForSequenceClassificationCNN, BertForSequenceClassificationLSTM, BertForSequenceClassificationBILSTM, \
+    BertConfig, WEIGHTS_NAME, CONFIG_NAME
 ### kyoungman.bae @ 19-05-28
 from pytorch_pretrained_bert.tokenization_morp import BertTokenizer
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
@@ -387,7 +387,6 @@ def main():
                         help="The output directory where the model predictions and checkpoints will be written.")
     parser.add_argument("--vocab_file", default=None, type=str, required=True,
                         help="The vocabulary file that the BERT model was trained on.")
-    ### kyoungman.bae @ 19-05-28 @
     parser.add_argument("--bert_model_path", default=None, type=str, required=True,
                         help="Bert pre-trained model path")
     parser.add_argument("--sheet_num",
@@ -400,20 +399,15 @@ def main():
                         type=str,
                         help="Where do you want to store the pre-trained models downloaded from s3")
     parser.add_argument("--max_seq_length",
-                        # default=256,
                         default=128,
-                        # default=62,
-                        # default=40,
                         type=int,
                         help="The maximum total input sequence length after WordPiece tokenization. \n"
                              "Sequences longer than this will be truncated, and sequences shorter \n"
                              "than this will be padded.")
     parser.add_argument("--overlap_size_token",
                         default=64,
-                        # default=30,
                         type=int)
     parser.add_argument("--non_violence_threshold",
-                        # default=0.6,
                         default=0.1,
                         type=int)
     parser.add_argument("--test_code",
@@ -441,8 +435,6 @@ def main():
                         help="Set this flag if you are using an uncased model.")
     parser.add_argument("--train_batch_size",
                         default=8,
-                        # default=6,
-                        # default=1,
                         type=int,
                         help="Total batch size for training.")
     parser.add_argument("--eval_batch_size",
@@ -520,6 +512,8 @@ def main():
         BertForSequenceClassification = BertForSequenceClassificationCNN
     elif classification_name == "lstm":
         BertForSequenceClassification = BertForSequenceClassificationLSTM
+    elif classification_name == "bilstm":
+        BertForSequenceClassification = BertForSequenceClassificationBILSTM
 
     processors = {
         "ai_challenge": AI_Challenge_Processor

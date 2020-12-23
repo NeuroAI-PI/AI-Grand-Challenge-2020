@@ -645,16 +645,8 @@ class BertForSequenceClassificationMLP(PreTrainedBertModel):
     def __init__(self, config, num_labels=2):
         super(BertForSequenceClassificationMLP, self).__init__(config)
 
-        # # reshape
-        # self.max_length = 128
-        # self.fc1 = nn.Linear(config.hidden_size*self.max_length, 512)
-
         # not reshape
         self.fc1 = nn.Linear(config.hidden_size, 512)
-
-        # select_cls_layers_reshape
-        # self.select_layers_len = 4
-        # self.fc1 = nn.Linear(config.hidden_size*self.select_layers_len, 512)
 
         self.num_labels = num_labels
         self.bert = BertModel(config)
@@ -668,9 +660,6 @@ class BertForSequenceClassificationMLP(PreTrainedBertModel):
     def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
         output_all_encoded_layers, pooled_output = self.bert(input_ids, token_type_ids, attention_mask,
                                                              output_all_encoded_layers=False)
-        # reshape
-        # model_input = torch.reshape(output_all_encoded_layers, (len(output_all_encoded_layers), -1))
-
         # # not reshape
         model_input = pooled_output
 
@@ -817,4 +806,82 @@ class BertForSequenceClassificationLSTM(PreTrainedBertModel):
             return logits
 
 
+class BertForSequenceClassificationBILSTM(PreTrainedBertModel):
+    def __init__(self, config, num_labels=None):
+        super(BertForSequenceClassificationBILSTM, self).__init__(config)
+        self.bert = BertModel(config)
+
+        self.num_labels = num_labels
+        self.input_size = 256
+        self.rnn_hidden = 768
+        self.num_layers = 2
+        self.select_layers_len = 4
+        self.using_pack_sequence = True
+
+        for param in self.bert.parameters():
+            param.requires_grad = True
+
+        self.dropout_1 = nn.Dropout(config.hidden_dropout_prob)
+        self.lstm_1 = nn.LSTM(config.hidden_size, config.hidden_size // 8, num_layers=self.num_layers,
+                              bidirectional=True, batch_first=True, dropout=config.hidden_dropout_prob)
+
+        self.dropout_2 = nn.Dropout(config.hidden_dropout_prob)
+        self.lstm_2 = nn.LSTM(config.hidden_size, config.hidden_size // 8, num_layers=self.num_layers,
+                              bidirectional=True, batch_first=True, dropout=config.hidden_dropout_prob)
+
+        self.dropout_3 = nn.Dropout(config.hidden_dropout_prob)
+        self.lstm_3 = nn.LSTM(config.hidden_size, config.hidden_size // 8, num_layers=self.num_layers,
+                              bidirectional=True, batch_first=True, dropout=config.hidden_dropout_prob)
+
+        self.dropout_4 = nn.Dropout(config.hidden_dropout_prob)
+        self.lstm_4 = nn.LSTM(config.hidden_size, config.hidden_size // 8, num_layers=self.num_layers,
+                              bidirectional=True, batch_first=True, dropout=config.hidden_dropout_prob)
+
+        self.fc1 = nn.Linear(self.input_size * 768, self.input_size * 768 // 512)
+        self.fc2 = nn.Linear(self.input_size * 768 // 512, self.num_labels)
+
+        self.tanh = nn.Tanh()
+        self.leakyrelu = nn.LeakyReLU(0.01)
+
+
+    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
+
+        # # version 1
+        outputs, _ = self.bert(input_ids, token_type_ids, attention_mask=attention_mask,
+                               output_all_encoded_layers=True)
+
+        out = outputs[-1]
+        out = self.dropout_1(out)
+        out, _ = self.lstm_1(out)
+
+        out2 = outputs[-2]
+        out2 = self.dropout_2(out2)
+        out2, _ = self.lstm_2(out2)
+
+        out = torch.cat((out, out2), 2)
+
+        out2 = outputs[-3]
+        out2 = self.dropout_3(out2)
+        out2, _ = self.lstm_3(out2)
+        out = torch.cat((out, out2), 2)
+
+        out2 = outputs[-4]
+
+        out2 = self.dropout_4(out2)
+        out2, _ = self.lstm_4(out2)
+        out = torch.cat((out, out2), 2)
+
+        del out2, outputs
+
+        out = out.reshape([out.shape[0], -1])
+
+        out = self.fc1(out)
+        logits = self.fc2(out)
+
+        if labels is not None:
+            loss_fct = CrossEntropyLoss()
+            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+            return loss
+        else:
+            return logits
 
