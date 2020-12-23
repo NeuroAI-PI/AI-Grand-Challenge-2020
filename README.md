@@ -35,7 +35,7 @@ requests
 ### 1. MLP
 
 <p align="center"><img src="./img/MLP.png"  width="400" height="270"></p>
-<p align="center"><b>< 활용된 CNN 모델 ></b><p align="center">
+<p align="center"><b>< 활용된 MLP 모델 ></b><p align="center">
 
 ### 2. CNN
 
@@ -58,11 +58,12 @@ CNN은 [해당 논문](https://arxiv.org/abs/1408.5882)을 참고하였습니다
 
 ## Results
 
-결과는 Macro-F1 score에 의해 평가되었으며 아래와 같이 정의한다.
+본 대회에서는 분류 결과를 Macro-F1 score에 의해 평가하였으며, Macro-F1 score는 아래와 같이 정의합니다. 이때, i는 각각의 폭력 및 비폭력 Class를 의미합니다.
 
 <p align="center"><img src="./img/formula.png"  width=400" height="120"></p>
 <p align="center"><b>< Macro-F1 Score ></b><p align="center">
 
+위 식을 토대로, 저희의 분류 
 아래의 결과는 2020 인공지능 그랜드 챌린지 4차 대회 음성인지 트랙에서 본 팀에 대한 결과이며, 주최 측에서 테스트 데이터는 공개하지 않아 확인할 수 없습니다.
 
 | Model | MLP [1] | CNN [2] | LSTM [3] | Bi-LSTM [4] |
