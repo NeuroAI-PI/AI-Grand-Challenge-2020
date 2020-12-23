@@ -39,11 +39,10 @@ requests
 
 ### 2. CNN
 
+CNN은 [해당 논문](https://arxiv.org/abs/1408.5882)을 참고하였습니다. 더 자세한 내용은 논문에서 확인할 수 있습니다. 
+
 <p align="center"><img src="./img/CNN.png"  width="700" height="270"></p>
 <p align="center"><b>< 활용된 CNN 모델 ></b><p align="center">
-
-[ref] https://arxiv.org/abs/1408.5882
-
 
 ### 3. LSTM
 
